@@ -1,0 +1,26 @@
+---
+title: "p8105_hw3_yz4717"
+author: "Yang Zhao - yz4717"
+date: "2023-10-09"
+output: github_document
+---
+
+```{r}
+library(tidyverse)
+library(p8105.datasets) 
+data("brfss_smart2010")
+```
+```{r}
+dict_resp = c("Excellent", 
+              "Very good",
+              "Good",
+              "Fair",
+              "Poor")
+
+brfss_df = brfss_smart2010 |> 
+  janitor::clean_names() |> 
+  filter(topic == "Overall Health" & response == dict_resp)
+
+  brfss_df$response |> as.factor()
+```
+
