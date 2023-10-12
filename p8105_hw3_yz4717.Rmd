@@ -9,6 +9,11 @@ output: github_document
 library(tidyverse)
 library(p8105.datasets) 
 data("brfss_smart2010")
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6
+)
 ```
 
 
@@ -34,7 +39,7 @@ brfss_df = brfss_smart2010 |>
 ```
 
 
-```{r}
+```{r q2_0201}
 result_2002 = brfss_df |> 
   filter(year == 2002) |> 
   distinct(state,county)|>  
@@ -57,9 +62,17 @@ result_2001 = brfss_df |>
 excellent = brfss_df |>
   filter(response == "Excellent") |> 
   select(year,state,data_value) |> 
-  group_by(state) |> 
+  group_by(state,year) |> 
   summarize(mean = mean(data_value))  
 
-excellent |> head()
+excellent |> 
+  ggplot(aes(x = year,y = mean, group = state)) + 
+  geom_point() +
+  geom_line()+
+  facet_wrap(~state)
+```
+
+```{r}
+
 ```
 
