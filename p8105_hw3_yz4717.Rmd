@@ -32,6 +32,8 @@ brfss_df = brfss_smart2010 |>
   mutate(state = locationabbr,
          county = locationdesc)
 ```
+
+
 ```{r}
 result_2002 = brfss_df |> 
   filter(year == 2002) |> 
@@ -49,5 +51,15 @@ result_2001 = brfss_df |>
   pull(state) |> 
   print()
 
+```
+
+```{r}
+excellent = brfss_df |>
+  filter(response == "Excellent") |> 
+  select(year,state,data_value) |> 
+  group_by(state) |> 
+  summarize(mean = mean(data_value))  
+
+excellent |> head()
 ```
 
