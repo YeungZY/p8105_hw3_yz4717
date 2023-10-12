@@ -10,17 +10,44 @@ library(tidyverse)
 library(p8105.datasets) 
 data("brfss_smart2010")
 ```
-```{r}
-dict_resp = c("Excellent", 
-              "Very good",
-              "Good",
+
+
+
+```{r q2_cleaning,warning=FALSE}
+dict_resp = c("Poor",
               "Fair",
-              "Poor")
+              "Good",
+              "Very good",
+              "Excellent")
 
 brfss_df = brfss_smart2010 |> 
   janitor::clean_names() |> 
-  filter(topic == "Overall Health" & response == dict_resp)
+  filter(topic == "Overall Health" & response == dict_resp) |> 
+  mutate(
+    response,
+    response = factor(
+      response,
+      levels = dict_resp,
+      ordered = TRUE)) |> 
+  mutate(state = locationabbr,
+         county = locationdesc)
+```
+```{r}
+result_2002 = brfss_df |> 
+  filter(year == 2002) |> 
+  distinct(state,county)|>  
+  count(state) |> 
+  filter(n>7) |> 
+  pull(state) |> 
+  print()
 
-  brfss_df$response |> as.factor()
+result_2001 = brfss_df |> 
+  filter(year == 2001)|> 
+  distinct(state,county) |> 
+  count(state) |> 
+  filter(n>7) |> 
+  pull(state) |> 
+  print()
+
 ```
 
