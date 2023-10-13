@@ -8,6 +8,7 @@ output: github_document
 ```{r}
 library(tidyverse)
 library(p8105.datasets) 
+library(ggplot2)
 data("brfss_smart2010")
 
 knitr::opts_chunk$set(
@@ -76,6 +77,8 @@ ny_distri_df =
   filter(year == 2006 | year == 2010 ) |> 
   filter(state == "NY")
 
+ny_distri_df |> head()
+
 ny_distr_plot=
   ny_distri_df |> 
   ggplot(aes(x=response,y = data_value))+
@@ -84,6 +87,12 @@ ny_distr_plot=
 ```
 
 ```{r q3_cleaning}
+q3_factor_order = c(
+  "less than high school",
+  "high school equivalent",
+  "more than high school"
+)
+
 covar_df = 
   read_csv("Data/nhanes_covar.csv",skip = 4) |> 
   janitor::clean_names() |> 
@@ -94,6 +103,9 @@ covar_df =
                                 3~"more than high school")) |> 
   filter(age>=21) |> 
   drop_na() |> 
+  mutate(education = factor(education,
+                            levels = q3_factor_order,
+                            ordered = TRUE)) |> 
   relocate(seqn,sex,education)
 
 accel_df = 
@@ -101,12 +113,55 @@ accel_df =
   janitor::clean_names() |> 
   pivot_longer(min1:min1440,
                names_to = "time_mark",
-               values_to = "values")
+               values_to = "values") |> 
+  mutate(time_mark = substring(time_mark,first = 4),
+         time_mark = as.numeric(time_mark)) 
 ```
 
 ```{r q3_table_for_each_catergory}
 catergoried_mw_edu = covar_df |> 
   group_by(sex, education) |> 
   tally()
+
+catergoried_mw_edu |> head()
+```
+
+```{r}
+covar_df |> 
+  ggplot(aes(x = age,color = sex))+
+  geom_density() +
+  facet_grid(.~education)
+```
+
+```{r}
+total_activity_df = accel_df |> 
+  group_by(seqn) |> 
+  summarise(total_activity = sum(values))
+```
+```{r}
+joint_sum_df = inner_join(covar_df,total_activity_df,by = "seqn")
+
+joint_sum_df |> 
+  ggplot(aes(x = age , y = total_activity, color = sex))+
+  geom_point()+
+  geom_smooth()+
+  facet_grid(.~education)
+```
+
+```{r}
+joint_data_df |> 
+  ggplot(aes(x = age , y = total_activity, color = sex))+
+  geom_point()+
+  geom_smooth(method = "lm")+
+  facet_grid(.~education)
+```
+
+```{r}
+time_organized = accel_df |> 
+  mutate(time_mark = substring(time_mark,first = 4)) 
+
+by_minutes = inner_join(covar_df,time_organized, by = join_by("seqn"))|> 
+  group_by(sex,education,time_mark)
+
 ```
 
