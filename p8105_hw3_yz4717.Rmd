@@ -40,7 +40,7 @@ brfss_df = brfss_smart2010 |>
 
 brfss_df |> head()
 ```
-
+First I import the data into the environment.The 'clean_names()' function is applied to ensure that the column names of the data frame are clean and standardized. Subsequently, I used the filter function to extract rows from the data frame where the 'topic' column equal to "Overall Health" and the 'response' column contains any of the predefined health-related responses in the dict_resp vector. The subsequent mutate function is employed to create a new column called 'response' and converts it into an ordered factor, arranging the levels based on the predefined values in the dict_resp vector. Additionally, another mutate function call generates two new columns, 'state' and 'county', by assigning values from the existing columns 'locationabbr' and 'locationdesc', respectively. This series of operations essentially modifies and filters the data frame, preparing it for further analysis or visualization based on the specified health-related responses and related geographical information.
 
 ```{r q2_0201}
 result_2002 = brfss_df |> 
@@ -59,6 +59,8 @@ result_2010 = brfss_df |>
 
 ```
 
+In this part,  I use the  'filter' function
+
 ```{r q2_output_plot}
 excellent = brfss_df |>
   filter(response == "Excellent") |> 
@@ -68,7 +70,10 @@ excellent = brfss_df |>
 
 excellent |> 
   ggplot(aes(x = year,y = mean, group = state,color = state)) + 
-  geom_line()
+  geom_line()+
+  labs(x = "Year",
+    y = "Average",
+    title = "Average Within the Given Years In Different States")
 ```
 
 ```{r q2_outpt_boxplot}
@@ -86,7 +91,7 @@ ny_distr_plot=
   facet_wrap(.~year)
 ```
 
-```{r q3_cleaning}
+```{r q3_cleaning_covar}
 q3_factor_order = c(
   "less than high school",
   "high school equivalent",
@@ -107,7 +112,10 @@ covar_df =
                             levels = q3_factor_order,
                             ordered = TRUE)) |> 
   relocate(seqn,sex,education)
+```
 
+
+```{r cleaning_accel}
 accel_df = 
   read_csv("Data/nhanes_accel.csv") |> 
   janitor::clean_names() |> 
@@ -115,53 +123,59 @@ accel_df =
                names_to = "time_mark",
                values_to = "values") |> 
   mutate(time_mark = substring(time_mark,first = 4),
-         time_mark = as.numeric(time_mark)) 
+         time_mark = as.numeric(time_mark),) 
 ```
 
 ```{r q3_table_for_each_catergory}
 catergoried_mw_edu = covar_df |> 
   group_by(sex, education) |> 
-  tally()
+  tally() |> 
+  pivot_wider(
+    names_from = sex,
+    values_from = n
+  ) |> knitr::kable(
+    caption = "Summary of the total muber of people")
 
-catergoried_mw_edu |> head()
+print(catergoried_mw_edu)
 ```
 
-```{r}
+```{r plot}
 covar_df |> 
-  ggplot(aes(x = age,color = sex))+
-  geom_density() +
-  facet_grid(.~education)
+  ggplot(aes(x = education,y = age,color = sex))+
+  geom_boxplot() +
+  labs(title ="Boxplot of age distribution catergoried by sex and education" )
 ```
 
 ```{r}
 total_activity_df = accel_df |> 
   group_by(seqn) |> 
   summarise(total_activity = sum(values))
-```
-```{r}
-joint_sum_df = inner_join(covar_df,total_activity_df,by = "seqn")
+
+joint_sum_df = left_join(covar_df,total_activity_df,by = "seqn")
 
 joint_sum_df |> 
-  ggplot(aes(x = age , y = total_activity, color = sex))+
+  ggplot(aes(x = age , y = total_activity, color = sex, se = TRUE))+
   geom_point()+
   geom_smooth()+
-  facet_grid(.~education)
+  facet_grid(.~education)+
+  labs(title = "")
 ```
+
+It's clear that the graph mainly shows the different
+
+The presented graph illustrates variations in activities between males and females throughout a 24-hour span within different education levels and across various age groups. Analysis of the initial two education levels, namely "Less than High School" and "High School Equivalent," suggests a minimal disparity, as indicated by the overall trend line and data points. However, in the "More than High School" category, a notable surge in activity is noticeable for both genders, particularly around minute 500 and minute 1250, with the male activity peaking at minute 1250, approximately at 8 o'clock in the evening.
 
 ```{r}
-joint_data_df |> 
-  ggplot(aes(x = age , y = total_activity, color = sex))+
-  geom_point()+
-  geom_smooth(method = "lm")+
-  facet_grid(.~education)
+
+minutes = left_join(covar_df,accel_df,by = join_by("seqn")) 
+
+minutes |>
+  ggplot(aes(x = time_mark, y = values, color = sex)) +
+  geom_line(alpha = 0.5) +
+  geom_smooth(aes(group = sex), se = FALSE) +
+  facet_wrap(~ education) +
+  labs(x = "Time of Day", y = "averages of MIMS ") +
+  scale_color_manual(values = c("male" = "blue", "female" = "green"))
 ```
 
-```{r}
-time_organized = accel_df |> 
-  mutate(time_mark = substring(time_mark,first = 4)) 
-
-by_minutes = inner_join(covar_df,time_organized, by = join_by("seqn"))|> 
-  group_by(sex,education,time_mark)
-
-```
 
