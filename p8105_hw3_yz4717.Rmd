@@ -9,17 +9,15 @@ output: github_document
 library(tidyverse)
 library(p8105.datasets) 
 library(ggplot2)
-data("brfss_smart2010")
-
-knitr::opts_chunk$set(
-  fig.width = 6,
-  fig.asp = .6
-)
 ```
 
+First of all, I import all the needed packages into the environment.
 
+## Question 2
 
 ```{r q2_cleaning,warning=FALSE}
+data("brfss_smart2010")
+
 dict_resp = c("Poor",
               "Fair",
               "Good",
@@ -40,7 +38,8 @@ brfss_df = brfss_smart2010 |>
 
 brfss_df |> head()
 ```
-First I import the data into the environment.The 'clean_names()' function is applied to ensure that the column names of the data frame are clean and standardized. Subsequently, I used the filter function to extract rows from the data frame where the 'topic' column equal to "Overall Health" and the 'response' column contains any of the predefined health-related responses in the dict_resp vector. The subsequent mutate function is employed to create a new column called 'response' and converts it into an ordered factor, arranging the levels based on the predefined values in the dict_resp vector. Additionally, another mutate function call generates two new columns, 'state' and 'county', by assigning values from the existing columns 'locationabbr' and 'locationdesc', respectively. This series of operations essentially modifies and filters the data frame, preparing it for further analysis or visualization based on the specified health-related responses and related geographical information.
+
+First, I imported the data into the environment. The 'clean_names()' function is applied to ensure that the column names of the data frame are clean and standardized. Subsequently, I used the `filter` function to extract rows from the data frame where the 'topic' equal to "Overall Health" and the 'response' column contains any of the predefined health-related responses in the dict_resp . The subsequent mutate function is employed to create a new column called 'response' and converts it into an ordered factor, arranging the levels based on the predefined values in the dict_resp vector. Additionally, another mutate function change the name of `locationabbr` and `locationdesc` variables into `state` and `county` respectively. These operations essentially modifies and filters the data frame, preparing it for analysis and visualization based on the specified health-related responses and related geographical information.
 
 ```{r q2_0201}
 result_2002 = brfss_df |> 
@@ -59,7 +58,14 @@ result_2010 = brfss_df |>
 
 ```
 
-In this part,  I use the  'filter' function
+Then, I used the function `filter` to select the observations in a specific year . Then, I keep only unique rows from the given data by the variable of state and county. And I picked out all the states which appears more than 7 times after counting the state. At last, I use the `pull` functin to show all states which meets the requirement.
+
+Based on the result I have, I have these comments:
+* In the year of 2002, there are `r length(result_2002)` states which were observed at 7 or more locations:`r result_2002`.
+
+* In the year of 2010, there are`r length(result_2010)` states  which were observed at 7 or more locations:`r result_2010`.
+
+ The following plot is going to show the average value of the people who gave the excellent response in each state from the year of 2002 to the year of 2010.
 
 ```{r q2_output_plot}
 excellent = brfss_df |>
@@ -84,12 +90,15 @@ ny_distri_df =
 
 ny_distri_df |> head()
 
-ny_distr_plot=
-  ny_distri_df |> 
+ny_distri_df |> 
   ggplot(aes(x=response,y = data_value))+
   geom_boxplot() +
   facet_wrap(.~year)
 ```
+
+* Comment:
+
+## Question 3
 
 ```{r q3_cleaning_covar}
 q3_factor_order = c(
@@ -113,9 +122,9 @@ covar_df =
                             ordered = TRUE)) |> 
   relocate(seqn,sex,education)
 ```
+First of all, to make the code much more clear, I made a list of the education factor with the order. Then, I encoded the variable with reasonable classes as you can see in the code, and dropped all the `NA` in the data. To meet up the requirement, I also used the `filter` function to select the observations which is `21+`.
 
-
-```{r cleaning_accel}
+```{r cleaning_accel,warning=FALSE}
 accel_df = 
   read_csv("Data/nhanes_accel.csv") |> 
   janitor::clean_names() |> 
@@ -125,6 +134,8 @@ accel_df =
   mutate(time_mark = substring(time_mark,first = 4),
          time_mark = as.numeric(time_mark),) 
 ```
+
+Then, I also cleaned the `nhanes_accel.csv`. Using the `clean_names` as usual, I convert all the uppercase letters within the names of variables into lowercase. After that, I convert the data into longer format and clean the characters `min` in all the `time_mark` classes to make it into a reader-friendly data frame.
 
 ```{r q3_table_for_each_catergory}
 catergoried_mw_edu = covar_df |> 
@@ -139,12 +150,16 @@ catergoried_mw_edu = covar_df |>
 print(catergoried_mw_edu)
 ```
 
+As you can see from the table above
+
 ```{r plot}
 covar_df |> 
   ggplot(aes(x = education,y = age,color = sex))+
   geom_boxplot() +
   labs(title ="Boxplot of age distribution catergoried by sex and education" )
 ```
+
+*Comments: 
 
 ```{r}
 total_activity_df = accel_df |> 
@@ -161,9 +176,8 @@ joint_sum_df |>
   labs(title = "")
 ```
 
-It's clear that the graph mainly shows the different
+*Comments: It's clear that the graph mainly shows the difference between three different education levels. In the graph of `less than high school`, females' total activity is higher than male before the age of 40. After that, female's total activity will drop faster than males did.  While in the graph of `high school equivalent` and the graph of `more than high school`, the females' total activity is higher than males nearly at all ages and they peaks ar the age of 48 in both sex groups. Above three graphs, they all showed a downward trend in both male and female group, in other words, as they became older, the total activity will drop gradually. 
 
-The presented graph illustrates variations in activities between males and females throughout a 24-hour span within different education levels and across various age groups. Analysis of the initial two education levels, namely "Less than High School" and "High School Equivalent," suggests a minimal disparity, as indicated by the overall trend line and data points. However, in the "More than High School" category, a notable surge in activity is noticeable for both genders, particularly around minute 500 and minute 1250, with the male activity peaking at minute 1250, approximately at 8 o'clock in the evening.
 
 ```{r}
 
@@ -174,8 +188,7 @@ minutes |>
   geom_line(alpha = 0.5) +
   geom_smooth(aes(group = sex), se = FALSE) +
   facet_wrap(~ education) +
-  labs(x = "Time of Day", y = "averages of MIMS ") +
-  scale_color_manual(values = c("male" = "blue", "female" = "green"))
+  labs(x = "Time(minutes) in a Day", y = "MIMS") 
 ```
 
 
