@@ -2,7 +2,9 @@
 title: "p8105_hw3_yz4717"
 author: "Yang Zhao - yz4717"
 date: "2023-10-09"
-output: github_document
+output: 
+  github_document:
+    toc : TRUE
 ---
 
 ```{r}
@@ -12,6 +14,68 @@ library(ggplot2)
 ```
 
 First of all, I import all the needed packages into the environment.
+
+## Question 1
+
+```{r}
+data("instacart")
+
+instacart_df = 
+  instacart |> 
+  as_tibble()
+```
+
+This dataset contains `r nrow(instacart)` rows and `r ncol(instacart)` columns, with each row resprenting a single product from an instacart order. Variables include identifiers for user, order, and product; the order in which each product was added to the cart. There are several order-level variables, describing the day and time of the order, and number of days since prior order. Then there are several item-specific variables, describing the product name (e.g. Yogurt, Avocado), department (e.g. dairy and eggs, produce), and aisle (e.g. yogurt, fresh fruits), and whether the item has been ordered by this user in the past. In total, there are `r instacart |> select(product_id) |> distinct() |> count()` products found in `r instacart |> select(user_id, order_id) |> distinct() |> count()` orders from `r instacart |> select(user_id) |> distinct() |> count()` distinct users.
+
+Below is a table summarizing the number of items ordered from aisle. In total, there are 134 aisles, with fresh vegetables and fresh fruits holding the most items ordered by far.
+
+```{r}
+instacart_df |> 
+  count(aisle) |> 
+  arrange(desc(n))
+```
+
+Next is a plot that shows the number of items ordered in each aisle. Here, aisles are ordered by ascending number of items.
+
+```{r}
+instacart_df |> 
+  count(aisle) |> 
+  filter(n > 10000) |> 
+  mutate(aisle = fct_reorder(aisle, n)) |> 
+  ggplot(aes(x = aisle, y = n)) + 
+  geom_point() + 
+  labs(title = "Number of items ordered in each aisle") +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+```
+
+Our next table shows the three most popular items in aisles `baking ingredients`, `dog food care`, and `packaged vegetables fruits`, and includes the number of times each item is ordered in your table.
+
+```{r}
+instacart_df |> 
+  filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) |>
+  group_by(aisle) |> 
+  count(product_name) |> 
+  mutate(rank = min_rank(desc(n))) |> 
+  filter(rank < 4) |> 
+  arrange(desc(n)) |>
+  knitr::kable()
+```
+
+Finally is a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week. This table has been formatted in an untidy manner for human readers. Pink Lady Apples are generally purchased slightly earlier in the day than Coffee Ice Cream, with the exception of day 5.
+
+```{r}
+instacart_df |>
+  filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) |>
+  group_by(product_name, order_dow) |>
+  summarize(mean_hour = mean(order_hour_of_day)) |>
+  pivot_wider(
+    names_from = order_dow, 
+    values_from = mean_hour) |>
+  knitr::kable(digits = 2)
+```
+
+
 
 ## Question 2
 
@@ -39,7 +103,7 @@ brfss_df = brfss_smart2010 |>
 brfss_df |> head()
 ```
 
-First, I imported the data into the environment. The 'clean_names()' function is applied to ensure that the column names of the data frame are clean and standardized. Subsequently, I used the `filter` function to extract rows from the data frame where the 'topic' equal to "Overall Health" and the 'response' column contains any of the predefined health-related responses in the dict_resp . The subsequent mutate function is employed to create a new column called 'response' and converts it into an ordered factor, arranging the levels based on the predefined values in the dict_resp vector. Additionally, another mutate function change the name of `locationabbr` and `locationdesc` variables into `state` and `county` respectively. These operations essentially modifies and filters the data frame, preparing it for analysis and visualization based on the specified health-related responses and related geographical information.
+First, I imported the data into the environment.This dataset contains `r nrow(brfss_smart2010)` rows and `r ncol(brfss_smart2010)` columns before cleaning. The 'clean_names()' function is applied to ensure that the column names of the data frame are clean and standardized. Subsequently, I used the `filter` function to extract rows from the data frame where the `topic` equal to "Overall Health" and the `response` column contains any of the predefined health-related responses in the dict_resp . The subsequent mutate function is employed to create a new column called `response` and converts it into an ordered factor, arranging the levels based on the predefined values in the dict_resp vector. Additionally, another mutate function change the name of `locationabbr` and `locationdesc` variables into `state` and `county` respectively. These operations essentially modifies and filters the data frame, preparing it for analysis and visualization based on the specified health-related responses and related geographical information.
 
 ```{r q2_0201}
 result_2002 = brfss_df |> 
@@ -61,9 +125,10 @@ result_2010 = brfss_df |>
 Then, I used the function `filter` to select the observations in a specific year . Then, I keep only unique rows from the given data by the variable of state and county. And I picked out all the states which appears more than 7 times after counting the state. At last, I use the `pull` functin to show all states which meets the requirement.
 
 Based on the result I have, I have these comments:
-* In the year of 2002, there are `r length(result_2002)` states which were observed at 7 or more locations:`r result_2002`.
 
-* In the year of 2010, there are`r length(result_2010)` states  which were observed at 7 or more locations:`r result_2010`.
+* In the year of 2002, there are `r length(result_2002)` states which were observed at 7 or more locations: `r result_2002`.
+
+* In the year of 2010, there are `r length(result_2010)` states  which were observed at 7 or more locations: `r result_2010`.
 
  The following plot is going to show the average value of the people who gave the excellent response in each state from the year of 2002 to the year of 2010.
 
@@ -72,7 +137,9 @@ excellent = brfss_df |>
   filter(response == "Excellent") |> 
   select(year,state,data_value) |> 
   group_by(state,year) |> 
-  summarize(mean = mean(data_value))  
+  summarize(mean = mean(data_value)) 
+
+excellent |> head()
 
 excellent |> 
   ggplot(aes(x = year,y = mean, group = state,color = state)) + 
@@ -82,7 +149,7 @@ excellent |>
     title = "Average Within the Given Years In Different States")
 ```
 
-The 
+From the above plot, we can clearly see the average data in different states among the given years. It is obvious that the mean distribution of the data shows a wide range of fluctuations.
 
 ```{r q2_outpt_boxplot}
 ny_distri_df = 
@@ -99,11 +166,11 @@ ny_distri_df |>
   labs(title = "Distribution of the Data in 2006 and 2010")
 ```
 
-* Comment:In the boxplot I got, the frequency of `poor` is the lowest in both years. Apart from that, the answer of `Very good` appeared most frequent. However, the “good” response is the second most frequent response.
+* Comment: In the `Boxplot` I got, the frequency of `poor` is the lowest in both years. Apart from that, the answer of `Very good` appeared most frequent. However, the “good” response is the second most frequent response.
 
 ## Question 3
 
-```{r q3_cleaning_covar}
+```{r q3_cleaning_covar,warning=FALSE}
 q3_factor_order = c(
   "less than high school",
   "high school equivalent",
@@ -124,6 +191,8 @@ covar_df =
                             levels = q3_factor_order,
                             ordered = TRUE)) |> 
   relocate(seqn,sex,education)
+
+covar_df |> head()
 ```
 First of all, to make the code much more clear, I made a list of the education factor with the order. Then, I encoded the variable with reasonable classes as you can see in the code, and dropped all the `NA` in the data. To meet up the requirement, I also used the `filter` function to select the observations which is `21+`.
 
@@ -136,30 +205,32 @@ accel_df =
                values_to = "values") |> 
   mutate(time_mark = substring(time_mark,first = 4),
          time_mark = as.numeric(time_mark),) 
+
+accel_df |> head()
 ```
 
 Then, I also cleaned the `nhanes_accel.csv`. Using the `clean_names` as usual, I convert all the uppercase letters within the names of variables into lowercase. After that, I convert the data into longer format and clean the characters `min` in all the `time_mark` classes to make it into a reader-friendly data frame.
 
 ```{r q3_table_for_each_catergory}
-catergoried_mw_edu = covar_df |> 
+covar_df |> 
   group_by(sex, education) |> 
   tally() |> 
   pivot_wider(
     names_from = sex,
     values_from = n
   ) |> knitr::kable(
-    caption = "Summary of the total muber of people in")
-
-print(catergoried_mw_edu)
+    caption = "Summary of the total muber of people in different education level")
 ```
 
-As you can see from the table above, you can clear see the sample size in these different catergories. 
+As you can see from the table above, you can clear see the sample size in these different catergories. In the group of `less than high school` and `more than high school`, the sample size of female and male is nearly the same in each group. But there are large gaps in the data volume in the group of `high school equivalent`, which means slight sample heterogeneity in this group.
 
 ```{r plot}
 covar_df |> 
   ggplot(aes(x = education,y = age,color = sex))+
   geom_boxplot() +
-  labs(title ="Boxplot of age distribution catergoried by sex and education" )
+  labs(x = "Age",
+       y = "Education Level",
+       title ="Boxplot of age distribution catergoried by sex and education" )
 ```
 
 * Comments: By comparing the age ranges of all the samples, it can be seen that all the samples cover relatively similar age ranges. cosidering the whole distribution, the data of `female` nearly shares a same distribution with the data of `male` in both the group of `less than high school` and `more than high school` separately. In the section of `male`, when the education level becomes higher, the mean age of the male’s group becomes younger gradually when the education level becomes higher. In the section of `female`, for the group of `lower than high school` and `equivalent to high school groups`, the mean age are similar, which is way higher than the average age of the group of `higher than high school`.
@@ -169,6 +240,8 @@ total_activity_df = accel_df |>
   group_by(seqn) |> 
   summarise(total_activity = sum(values))
 
+total_activity_df |> head()
+
 joint_sum_df = left_join(covar_df,total_activity_df,by = "seqn")
 
 joint_sum_df |> 
@@ -176,7 +249,10 @@ joint_sum_df |>
   geom_point()+
   geom_smooth()+
   facet_grid(.~education)+
-  labs(title = "Age - Total Activities by Sex and Education Level")
+  labs(
+    x = "Age",
+    y = "Total Activity",
+    title = "Age - Total Activities by Sex and Education Level")
 ```
 
 * Comments: It's clear that the graph mainly shows the difference between three different education levels. In the graph of `less than high school`, females' total activity is higher than male before the age of 40. After that, female's total activity will drop faster than males did.  While in the graph of `high school equivalent` and the graph of `more than high school`, the females' total activity is higher than males nearly at all ages and they peaks ar the age of 48 in both sex groups. Above three graphs, they all showed a downward trend in both male and female group, in other words, as they became older, the total activity will drop gradually. 
@@ -191,7 +267,8 @@ minutes |>
   geom_line(alpha = 0.2) +
   geom_smooth(aes(group = sex), se = FALSE) +
   facet_wrap(~ education) +
-  labs(x = "Time(minutes) in a Day", y = "MIMS",
+  labs(x = "Time(minutes) in a Day", 
+       y = "MIMS",
        title = "Activity over 24 Hours catergorized by Sex and Education Level") 
 ```
 
