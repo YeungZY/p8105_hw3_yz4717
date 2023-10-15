@@ -194,7 +194,7 @@ covar_df =
 
 covar_df |> head()
 ```
-First of all, to make the code much more clear, I made a list of the education factor with the order. Then, I encoded the variable with reasonable classes as you can see in the code, and dropped all the `NA` in the data. To meet up the requirement, I also used the `filter` function to select the observations which is `21+`.
+First of all, to make the code much more clear, I made a list of the education factor with the order. Then, I encoded the variable with reasonable classes as you can see in the code, and dropped all the `NA` in the data. To meet up the requirement, I also used the `filter` function to select the observations which is `21+` years old.
 
 ```{r cleaning_accel,warning=FALSE}
 accel_df = 
